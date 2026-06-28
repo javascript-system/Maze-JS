@@ -2,9 +2,6 @@ services:
   - type: web
     name: mazejs
     env: static
-    routes:
-      - src: /*
-        dest: /*
     headers:
       - path: /*
         name: Cross-Origin-Opener-Policy
