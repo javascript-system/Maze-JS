@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: mazejs
+    name: maze-js
     env: static
     buildCommand: ""
     publish: ./
