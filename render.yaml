@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: mazejs-site
+    env: static
+    headers:
+      - path: /*
+        name: Cross-Origin-Opener-Policy
+        value: same-origin
+      - path: /*
+        name: Cross-Origin-Embedder-Policy
+        value: require-corp
