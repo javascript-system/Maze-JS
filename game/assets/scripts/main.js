@@ -66,73 +66,52 @@ window.onWinGame = async () => {
     const win = new Audio('assets/audios/win.mp3');
     win.volume = (settings.volumeMaster / 100) * (settings.volumeEffects / 100);
     win.play();
-    let rawCode = javascript.javascriptGenerator.workspaceToCode(workspace);
+
+    let displayCode = "";
     const langToDisplay = settings.outputTarget;
+
     if (currentMode === "blockly") {
-        let displayCode = "";
-        if (langToDisplay === "javascript") {
-            displayCode = String(rawCode.trim())
-                .replace(/let loopLimit = 0;|\n\s*loopLimit\+\+ < 500/g, "")
-                .replace(/advance\(\);/g, "advance(); //↑")
-                .replace(/rotate\(90\);/g, "rotate_right(); //↻")
-                .replace(/rotate\(180\);/g, "rotate_halfTurn(); //↻↻")
-                .replace(/rotate\(-90\);/g, "rotate_left(); //↺")
-                .replace(/!vCheckEnd\(\) && loopLimit\+\+ < 500/g, "did_not_reach_the_end()")
-                .replace(/vCheckPath\('front'\)/g, "path_is_clear('front')")
-                .replace(/vCheckPath\('right'\)/g, "path_is_clear('right')")
-                .replace(/vCheckPath\('left'\)/g, "path_is_clear('left')")
-                .replace(/vCheckPath\('back'\)/g, "path_is_clear('back')");
+        try {
+            if (typeof javascript !== 'undefined' && typeof workspace !== 'undefined' && workspace) {
+                let rawCode = javascript.javascriptGenerator.workspaceToCode(workspace);
+                displayCode = String(rawCode.trim())
+                    .replace(/let loopLimit = 0;|\n\s*loopLimit\+\+ < 500/g, "")
+                    .replace(/advance\(\);/g, "advance(); //↑")
+                    .replace(/rotate\(90\);/g, "rotate_right(); //↻")
+                    .replace(/rotate\(180\);/g, "rotate_halfTurn(); //↻↻")
+                    .replace(/rotate\(-90\);/g, "rotate_left(); //↺");
+            } else {
+                displayCode = "// Código salvo com sucesso nos blocos.";
+            }
+        } catch (e) {
+            console.warn("Gerador do Blockly ocupado, pulando leitura visual:", e);
+            displayCode = "// Desafio concluído com blocos!";
         }
-        else {
-            displayCode = rawCode
-                .replace(/let loopLimit = 0;?/g, "")
-                .replace(/loopLimit\+\+\s*<\s*500\s*&&?/g, "")
-                .replace(/&&\s*loopLimit\+\+\s*<\s*500/g, "")
-                .replace(/while\s*\(\s*!vCheckEnd\(\)\s*\)\s*\{/g, "while not reach_the_end():")
-                .replace(/if\s*\((.*?)\)\s*\{/g, "if $1:")
-                .replace(/\}\s*else\s*\{/g, "else:")
-                .replace(/for\s*\(let\s+times_done\s*=\s*0;\s*times_done\s*<\s*(\d+);\s*times_done\s*\+\+\)\s*\{/g, "for times_done in range($1):")
-                .replace(/advance\(\);/g, "advance() #↑")
-                .replace(/rotate\(90\);/g, "rotate_right() #↻")
-                .replace(/rotate\(180\);/g, "rotate_halfTurn() #🔀")
-                .replace(/rotate\(-90\);/g, "rotate_left() #↺")
-                .replace(/vCheckPath\('front'\)/g, "path_is_clear('front')")
-                .replace(/vCheckPath\('right'\)/g, "path_is_clear('right')")
-                .replace(/vCheckPath\('left'\)/g, "path_is_clear('left')")
-                .replace(/vCheckPath\('back'\)/g, "path_is_clear('back')")
-                .replace(/\}\s*$/gm, "")
-                .replace(/\}/g, "")
-                .replace(/^\s*[\r\n]/gm, "");
-        }
-        rentSettings.infiniteLoopAllowed;
-        document.getElementById("cfg-dark-mode").checked
+
         await dropdown(`
-        <h1>Parabéns! Nível ${currentLevelIndex + 1} Concluído!</h1>
-        <p>Você conseguiu passar de nível com ${displayCode.trim().split('\n').length} linhas de ${langToDisplay === "javascript" ? "JS" : "PY"}!</p>
-        <p>Veja como ficou sua lógica rentSettings.infiniteLoopAllowed;
-    document.getElementById("cfg-dark-mode").checkedem ${langToDisplay === "javascript" ? "JavaScript" : "Python"}:</p>
-        <code>${displayCode}</code>
-    `);
-    }
-    else {
+            <h1>Parabéns! Nível ${currentLevelIndex + 1} Concluído!</h1>
+            <p>Você conseguiu passar de nível usando a programação em blocos!</p>
+            <code>${displayCode || "// Sucesso!"}</code>
+        `);
+    } else {
         await dropdown(`
-        <h1>Parabéns! Nível ${currentLevelIndex + 1} Concluído!</h1>
-        <p>Você conseguiu passar de nível com ${langToDisplay === "javascript" ? "JavaScript" : "Python"}!</p>
-    `);
+            <h1>Parabéns! Nível ${currentLevelIndex + 1} Concluído!</h1>
+            <p>Você conseguiu passar de nível com ${langToDisplay === "javascript" ? "JavaScript" : "Python"}!</p>
+        `);
     }
 
     if (currentLevelIndex < levels.length - 1) {
         currentLevelIndex++;
-        startLevel(currentLevelIndex);
+        if (typeof startLevel === 'function') {
+            startLevel(currentLevelIndex);
+        }
     } else {
-        await dropdown(`rentSettings.infiniteLoopAllowed;
-    document.getElementById("cfg-dark-mode").checked
-            <h1>🏆 VOCÊ ZEROU!</h1>
-            <p>Parabéns! Você mestre dos algoritmos completou todos os desafios! o jogo será reiniciado..</p>
+        await dropdown(`
+            <h1>🏆 VOCÊ ZEROU O MAZEJS!</h1>
+            <p>Parabéns! Você completou todos os desafios! O jogo será reiniciado.</p>
         `);
         location.reload();
     }
-
 };
 
 window.onLooseGame = async (reason) => {
