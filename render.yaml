@@ -3,7 +3,6 @@ services:
     name: mazejs
     env: static
     buildCommand: ""
-    publish: "."
     headers:
       - path: /*
         name: Cross-Origin-Opener-Policy
