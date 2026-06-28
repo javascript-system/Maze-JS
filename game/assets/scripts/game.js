@@ -342,7 +342,7 @@ async function executeCode() {
                 const sab = new SharedArrayBuffer(1024);
                 const ia = new Int32Array(sab);
                 ia[0] = 0;
-                gameWorker = new Worker('assets/scripts/worker.js');
+                gameWorker = new Worker('./assets/scripts/worker.js');
                 timeoutId = setTimeout(() => {
                     if (gameWorker && !settings.infiniteLoopAllowed) {
                         gameWorker.terminate();
