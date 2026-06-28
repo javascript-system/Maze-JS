@@ -1,9 +1,8 @@
 services:
   - type: web
     name: maze-js
-    env: static
-    buildCommand: ""
-    publish: ./
+    runtime: static
+    staticPublish: .
     headers:
       - path: /*
         name: Cross-Origin-Opener-Policy
