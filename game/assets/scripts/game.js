@@ -1,452 +1,328 @@
-const TILE_SIZE = 64;
-const ANIM_SPEED = 250;
-const MOVE_EASE = (t) => t * t * (3 - 2 * t);
-let gameWorker = null;
-let timeoutId = null;
+let currentMode = "blockly";
+let executingCode = false;
+let monacoEditorInstance = null;
+let settings = DEFAULT_SETTINGS;
+let currentAudio = null;
+settings = getConfigs();
+updateSettings(settings);
+document.addEventListener('contextmenu', e => e.preventDefault());
 
-let canvas = document.getElementById('gameCanvas');
-let ctx = canvas.getContext('2d');
-const IMAGES = {};
-
-let currentLevelIndex = 0;
-let levelWidth = 0, levelHeight = 0, grid = [];
-let doorStates = {};
-let commandQueue = [];
-let isRunning = false;
-let visitedTiles = new Set();
-let autoPaths = [];
-let lastTime = 0;
-let animTimer = 0;
-
-let player = {
-    gx: 0, gy: 0, px: 0, py: 0,
-    dir: 0, currentDir: 0,
-    targetGx: 0, targetGy: 0, targetDir: 0,
-    startX: 0, startY: 0,
-    state: 'IDLE', bumpOffset: 0, scale: 1
-};
-
-function createAssets() {
-    const drawToImg = (w, h, drawFn) => {
-        const off = document.createElement('canvas');
-        off.width = w; off.height = h;
-        const octx = off.getContext('2d');
-        octx.imageSmoothingEnabled = false;
-        drawFn(octx);
-        const img = new Image();
-        img.src = off.toDataURL();
-        return img;
-    };
-
-    IMAGES['#'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#45475a'; c.fillRect(0, 0, 16, 16);
-        c.fillStyle = '#313244'; c.fillRect(1, 1, 14, 14);
-        c.fillStyle = '#1e1e2e'; c.fillRect(4, 4, 8, 8);
-    });
-    IMAGES['.'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#ffffff'; c.fillRect(0, 0, 16, 16);
-        c.fillStyle = '#f0f0f0'; c.fillRect(0, 0, 1, 16); c.fillRect(0, 0, 16, 1);
-    });
-    IMAGES['P'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#f9e2af'; c.fillRect(3, 3, 10, 10);
-        c.fillStyle = '#11111b'; c.fillRect(10, 5, 3, 2); c.fillRect(10, 9, 3, 2);
-    });
-    IMAGES['I'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#89dceb'; c.fillRect(0, 0, 16, 16);
-        c.fillStyle = '#ffffff'; c.globalAlpha = 0.5; c.fillRect(2, 2, 4, 1); c.fillRect(8, 10, 5, 1);
-    });
-    IMAGES['D_closed'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#fab387'; c.fillRect(2, 2, 12, 12);
-        c.fillStyle = '#45475a'; c.fillRect(7, 6, 2, 4);
-    });
-    IMAGES['D_open'] = drawToImg(16, 16, c => {
-        c.strokeStyle = '#fab387'; c.lineWidth = 1; c.strokeRect(2, 2, 12, 12);
-    });
-    IMAGES['B'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#f38ba8'; c.beginPath(); c.arc(8, 8, 5, 0, 7); c.fill();
-        c.fillStyle = '#11111b'; c.fillRect(6, 6, 4, 4);
-    });
-    IMAGES['E'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#a6e3a1'; c.fillRect(2, 2, 12, 12);
-        c.fillStyle = '#ffffff'; c.fillRect(6, 4, 4, 8); c.fillRect(4, 6, 8, 4);
-    });
-    IMAGES['T'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#eba0ac';
-        const startX = 0.5;
-        for (let i = 0; i < 3; i++) {
-            const baseLeft = startX + (i * 5);
-            const baseRight = baseLeft + 5;
-            const centerX = baseLeft + 2.5;
-            const topY = 2;
-            const bottomY = 14;
-            c.beginPath();
-            c.moveTo(baseLeft, bottomY);
-            c.lineTo(centerX, topY);
-            c.lineTo(baseRight, bottomY);
-            c.closePath();
-            c.fill();
-            c.fillStyle = 'rgba(0,0,0,0.1)';
-            c.beginPath();
-            c.moveTo(centerX, topY);
-            c.lineTo(baseRight, bottomY);
-            c.lineTo(centerX, bottomY);
-            c.fill();
-            c.fillStyle = '#eba0ac';
+function updateSettings(configs) {
+    let orgInfnt = settings.infiniteBlocks;
+    if (currentAudio) { currentAudio.volume = (configs.volumeMaster / 100) * (configs.volumeMusic / 100); }
+    const ico = document.getElementById("lang-ico");
+    ico.textContent = currentMode === "code" ? "JS" : "BL";
+    ico.style.backgroundColor = currentMode === "code" ? "#f3f303" : "#d67010ff";
+    ico.style.color = currentMode === "code" ? "#000" : "#fff";
+    if (configs.infiniteBlocks !== orgInfnt) {
+        const maxBlocksSpan = document.getElementById('max-blocks');
+        if (orgInfnt == false) {
+            maxBlocksSpan.innerText = "∞";
         }
-    });
-    IMAGES['S'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#cba6f7'; c.fillRect(4, 4, 8, 8);
-        c.fillStyle = '#ffffff'; c.fillRect(7, 5, 2, 6);
-    });
-}
-
-
-let vPlayer = { gx: 0, gy: 0, dir: 0 };
-let isFirstTimeInLevel = true;
-
-window.startLevel = async (idx) => {
-    isFirstTimeInLevel = true;
-    loadLevel(idx);
-    if (window.updateBlocklyLevel) {
-        window.updateBlocklyLevel(levels[idx].maxBlocks, levels[idx].blocksBlocked);
+        else {
+            maxBlocksSpan.innerText = currentMaxBlocks === Infinity ? "∞" : currentMaxBlocks;
+            currentMaxBlocks = orgCrnt;
+        }
     }
-    if (levels[idx].initialMessage && isFirstTimeInLevel) {
-        if (settings.showIntro == true) await dropdown(levels[idx].initialMessage);
-        isFirstTimeInLevel = false;
+    settings = configs;
+}
+
+window.dropdown = function (htmlContent) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        const content = document.createElement('div');
+        content.className = 'modal-content';
+        const bodyDiv = document.createElement('div');
+        bodyDiv.className = 'modal-body';
+        bodyDiv.innerHTML = htmlContent;
+        const rawCodeElement = bodyDiv.querySelector('code');
+        if (rawCodeElement) {
+            const langToDisplay = settings.outputTarget;
+            const codeText = rawCodeElement.textContent;
+            const pre = document.createElement('pre');
+            const code = document.createElement('code');
+            code.className = `language-${langToDisplay}`;
+            code.textContent = codeText;
+            pre.appendChild(code);
+            rawCodeElement.replaceWith(pre);
+            setTimeout(() => Prism.highlightElement(code), 0);
+        }
+        const btn = document.createElement('button');
+        btn.className = 'modal-button';
+        btn.innerText = 'Continuar';
+        btn.onclick = () => {
+            document.body.removeChild(overlay);
+            resolve();
+        };
+        content.appendChild(bodyDiv);
+        content.appendChild(btn);
+        overlay.appendChild(content);
+        document.body.appendChild(overlay);
+    });
+};
+
+window.onWinGame = async () => {
+    const win = new Audio('assets/audios/win.mp3');
+    win.volume = (settings.volumeMaster / 100) * (settings.volumeEffects / 100);
+    win.play();
+
+    let displayCode = "";
+    const langToDisplay = settings.outputTarget;
+
+    if (currentMode === "blockly") {
+        try {
+            // Verifica se a biblioteca do gerador e o workspace estão disponíveis
+            if (typeof javascript !== 'undefined' && typeof workspace !== 'undefined' && workspace) {
+                let rawCode = javascript.javascriptGenerator.workspaceToCode(workspace);
+                
+                if (langToDisplay === "javascript") {
+                    displayCode = String(rawCode.trim())
+                        .replace(/let loopLimit = 0;|\n\s*loopLimit\+\+ < 500/g, "")
+                        .replace(/advance\(\);/g, "advance(); //↑")
+                        .replace(/rotate\(90\);/g, "rotate_right(); //↻")
+                        .replace(/rotate\(180\);/g, "rotate_halfTurn(); //↻↻")
+                        .replace(/rotate\(-90\);/g, "rotate_left(); //↺")
+                        .replace(/!vCheckEnd\(\) && loopLimit\+\+ < 500/g, "did_not_reach_the_end()")
+                        .replace(/vCheckPath\('front'\)/g, "path_is_clear('front')")
+                        .replace(/vCheckPath\('right'\)/g, "path_is_clear('right')")
+                        .replace(/vCheckPath\('left'\)/g, "path_is_clear('left')")
+                        .replace(/vCheckPath\('back'\)/g, "path_is_clear('back')");
+                } else {
+                    displayCode = rawCode
+                        .replace(/let loopLimit = 0;?/g, "")
+                        .replace(/loopLimit\+\+\s*<\s*500\s*&&?/g, "")
+                        .replace(/&&\s*loopLimit\+\+\s*<\s*500/g, "")
+                        .replace(/while\s*\(\s*!vCheckEnd\(\)\s*\)\s*\{/g, "while not reach_the_end():")
+                        .replace(/if\s*\((.*?)\)\s*\{/g, "if $1:")
+                        .replace(/\}\s*else\s*\{/g, "else:")
+                        .replace(/for\s*\(let\s+times_done\s*=\s*0;\s*times_done\s*<\s*(\d+);\s*times_done\s*\+\+\)\s*\{/g, "for times_done in range($1):")
+                        .replace(/advance\(\);/g, "advance() #↑")
+                        .replace(/rotate\(90\);/g, "rotate_right() #↻")
+                        .replace(/rotate\(180\);/g, "rotate_halfTurn() #🔀")
+                        .replace(/rotate\(-90\);/g, "rotate_left() #↺")
+                        .replace(/vCheckPath\('front'\)/g, "path_is_clear('front')")
+                        .replace(/vCheckPath\('right'\)/g, "path_is_clear('right')")
+                        .replace(/vCheckPath\('left'\)/g, "path_is_clear('left')")
+                        .replace(/vCheckPath\('back'\)/g, "path_is_clear('back')")
+                        .replace(/\}\s*$/gm, "")
+                        .replace(/\}/g, "")
+                        .replace(/^\s*[\r\n]/gm, "");
+                }
+            } else {
+                displayCode = "// Não foi possível carregar os blocos visuais.";
+            }
+        } catch (e) {
+            console.error("Erro ao gerar código do Blockly:", e);
+            displayCode = "// Erro na conversão dos blocos.";
+        }
+
+        await dropdown(`
+            <h1>Parabéns! Nível ${currentLevelIndex + 1} Concluído!</h1>
+            <p>Você conseguiu passar de nível com ${displayCode.trim().split('\n').length} linhas de ${langToDisplay === "javascript" ? "JS" : "PY"}!</p>
+            <p>Veja como ficou sua lógica em ${langToDisplay === "javascript" ? "JavaScript" : "Python"}:</p>
+            <code>${displayCode}</code>
+        `);
+    } else {
+        await dropdown(`
+            <h1>Parabéns! Nível ${currentLevelIndex + 1} Concluído!</h1>
+            <p>Você conseguiu passar de nível com ${langToDisplay === "javascript" ? "JavaScript" : "Python"}!</p>
+        `);
     }
 
-    isRunning = true;
-};
-window.advance = () => {
-    let rad = vPlayer.dir * Math.PI / 180;
-    vPlayer.gx += Math.round(Math.cos(rad));
-    vPlayer.gy += Math.round(Math.sin(rad));
-    commandQueue.push({ type: 'move' });
-};
-window.rotate = (deg) => {
-    vPlayer.dir = (vPlayer.dir + deg) % 360;
-    commandQueue.push({ type: 'turn', val: deg });
-};
-window.vCheckPath = (direction) => {
-    let currentDir = ((vPlayer.dir % 360) + 360) % 360;
-    let checkDir = currentDir;
-    if (direction === 'right') checkDir += 90;
-    else if (direction === 'left') checkDir -= 90;
-    else if (direction === 'back') checkDir += 180;
-    let rad = (checkDir * Math.PI) / 180;
-    let nx = vPlayer.gx + Math.round(Math.cos(rad));
-    let ny = vPlayer.gy + Math.round(Math.sin(rad));
-    if (nx < 0 || nx >= levelWidth || ny < 0 || ny >= levelHeight) return false;
-    let tile = grid[ny * levelWidth + nx];
-    let type = (typeof tile === 'object') ? tile.special : tile;
-    return "P.EBSID".includes(type);
+    if (currentLevelIndex < levels.length - 1) {
+        currentLevelIndex++;
+        startLevel(currentLevelIndex);
+    } else {
+        await dropdown(`
+            <h1>🏆 VOCÊ ZEROU!</h1>
+            <p>Parabéns! Você, mestre dos algoritmos, completou todos os desafios! O jogo será reiniciado.</p>
+        `);
+        location.reload();
+    }
 };
 
-
-window.vCheckEnd = () => {
-    let tile = grid[vPlayer.gy * levelWidth + vPlayer.gx];
-    let type = typeof tile === 'object' ? tile.special : tile;
-    return type === 'E';
-};
-window.killLevel = (reason = "generic") => {
-    isRunning = false;
-    commandQueue = [];
-
-    animTimer = 0;
-    if (reason === "generic") return;
-    let message;
-    if (reason === "wall_collision") { message = "bateu em uma parede ou caiu para fora do mapa" }
-    else if (reason === "trap_spike") { message = "caiu em espinhos" }
-    window.onLooseGame(message); player.state = 'DYING';
+window.onLooseGame = async (reason) => {
+    const loose = new Audio('assets/audios/loose.mp3');
+    loose.volume = (settings.volumeMaster / 100) * (settings.volumeEffects / 100);
+    loose.play();
+    await dropdown(`
+        <h1>Ops! você perdeu</h1>
+        <p>Você morreu pois ${reason}, tente novamente.</p>
+    `)
 };
 
-function loadLevel(idx) {
-    currentLevelIndex = idx;
-    const lvl = levels[idx];
-    levelWidth = lvl.width;
-    grid = lvl.layout;
-    levelHeight = Math.ceil(grid.length / levelWidth);
-    doorStates = {}; commandQueue = []; visitedTiles.clear();
+window.toggleEditorMode = function () {
+    const blocklyDiv = document.getElementById("blocklyDiv");
+    const monacoDiv = document.getElementById("monacoDiv");
+    const counterDiv = document.getElementById("block-counter");
+    if (currentMode === "blockly") {
+        currentMode = "code";
+        blocklyDiv.style.display = "none";
+        monacoDiv.style.display = "block";
+        if (counterDiv) counterDiv.style.opacity = "0.3";
+        if (monacoEditorInstance) {
+            setTimeout(() => {
+                monacoEditorInstance.layout();
+            }, 10);
+        }
 
-    const pIdx = grid.findIndex(v => v === "P" || v.special === "P");
-    player.startX = pIdx % levelWidth;
-    player.startY = Math.floor(pIdx / levelWidth);
+    } else {
+        currentMode = "blockly";
+        monacoDiv.style.display = "none";
+        blocklyDiv.style.display = "block";
+        if (counterDiv) counterDiv.style.opacity = "1";
+        if (workspace) {
+            Blockly.svgResize(workspace);
+        }
+    }
+    updateSettings(settings);
+};
 
-    resetPlayerToStart();
-    calculatePaths();
+function levelMenu(show) {
+    const menu = document.getElementById('level-menu');
+    menu.style.display = show ? 'flex' : 'none';
+
+    if (show) renderChapters();
 }
 
-function resetPlayerToStart() {
-    player.gx = player.startX;
-    player.gy = player.startY;
-    player.px = player.gx * TILE_SIZE;
-    player.py = player.gy * TILE_SIZE;
-    player.dir = 0; player.currentDir = 0; player.targetDir = 0;
-    player.state = 'IDLE'; player.bumpOffset = 0; player.scale = 1;
-    visitedTiles.add(`${player.gx},${player.gy}`);
+function renderChapters() {
+    const wrapper = document.getElementById('chapters-wrapper');
+    wrapper.innerHTML = '';
+
+    chapters.forEach(chapter => {
+        const section = document.createElement('section');
+        section.className = 'chapter-card';
+        section.style.setProperty('--chapter-color', chapter.color);
+
+        section.innerHTML = `
+            <div class="chapter-header">
+                <h2>${chapter.name}</h2>
+                <p>${chapter.description}</p>
+            </div>
+            <div class="levels-grid">
+                ${chapter.levels.map(lvl => `
+                    <button class="level-btn" onclick="selectLevel(${lvl.id})" ${lvl.difficulty === diffs.d6 ? diffsColors.d6 : lvl.difficulty === diffs.d7 ? diffsColors.d7 : lvl.difficulty === diffs.d8 ? diffsColors.d8 : lvl.difficulty === diffs.d9 ? diffsColors.d9 : lvl.difficulty === diffs.d10 ? diffsColors.d10 : ""}>
+                        <span>${lvl.difficulty}</span>
+                        <b>${lvl.name}</b>
+                    </button>
+                `).join('')}
+            </div>
+        `;
+        wrapper.appendChild(section);
+    });
 }
 
-function calculatePaths() {
-    autoPaths = [];
-    const isWalkable = (t) => {
-        const type = typeof t === 'object' ? t.special : t;
-        return "P.EBSI D".includes(type);
+function selectLevel(id) {
+    currentLevelIndex = id;
+    levelMenu(false);
+    window.startLevel(id);
+}
+
+document.getElementById("settings-btn").addEventListener('click', async () => {
+    const response = await settingsMenu(true);
+    if (response.reason === "Unsaved") return;
+    updateSettings(response);
+});
+
+function validate(json, schema) {
+    for (const key in schema) {
+        const expectedRule = schema[key];
+        const isOptional = expectedRule.endsWith('?');
+        const expectedType = isOptional ? expectedRule.slice(0, -1) : expectedRule;
+        const hasKey = key in json;
+        const value = json[key];
+        if (!hasKey) {
+            if (isOptional) continue;
+            throw new Error(`Campo obrigatório ausente: ${key}`);
+        }
+
+        let actualType = typeof value;
+        if (actualType === 'object') {
+            if (Array.isArray(value)) actualType = 'array';
+            else if (value === null) actualType = 'null';
+        }
+
+        if (actualType !== expectedType) {
+            throw new Error(`O campo "${key}" deve ser do tipo ${expectedType}. Recebido: ${actualType}`);
+        }
+    }
+    return true;
+}
+
+document.getElementById('levelInput').addEventListener('change', async (event) => {
+    const files = Array.from(event.target.files);
+
+    if (files.length === 0) return;
+
+    const levelSchema = {
+        width: "number",
+        blocksBlocked: "array",
+        maxBlocks: "number?",
+        initialMessage: "string?",
+        layout: "array",
+        name: "string",
+        difficulty: "string"
     };
-    for (let i = 0; i < grid.length; i++) {
-        let x = i % levelWidth, y = Math.floor(i / levelWidth);
-        if (!isWalkable(grid[i])) continue;
-        [[1, 0], [0, 1]].forEach(([dx, dy]) => {
-            let nx = x + dx, ny = y + dy;
-            if (nx < levelWidth && ny < levelHeight && isWalkable(grid[ny * levelWidth + nx]))
-                autoPaths.push({ x1: x, y1: y, x2: nx, y2: ny });
+
+    for (const file of files) {
+        await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    validate(data, levelSchema);
+                    const exists = chapters.some(chapter =>
+                        chapter.levels.some(level => level.name === data.name)
+                    );
+
+                    if (exists) {
+                        throw new Error(`Já existe um nível cadastrado com o nome "${data.name}".`);
+                    }
+
+                    levels.push(data);
+                    const newId = levels.length - 1;
+                    let customChapter = chapters.find(chapter => chapter.name === "Personalizados");
+                    const levelItemForChapter = {
+                        id: newId,
+                        name: data.name,
+                        difficulty: data.difficulty
+                    };
+
+                    if (!customChapter) {
+                        chapters.push({
+                            name: "Personalizados",
+                            color: "#75c529ff",
+                            description: "Níveis personalizados (não oficiais) carregados pelo usuário!",
+                            levels: [levelItemForChapter]
+                        });
+                    } else {
+                        customChapter.levels.push(levelItemForChapter);
+                    }
+
+                    dropdown(`<h1>Sucesso</h1><p>O nível ${data.name} foi carregado como o nível #${newId + 1}</p>`);
+                } catch (err) {
+                    dropdown(`<h1>Erro</h1><p>Arquivo JSON inválido (${file.name}): ${err.message}<p>`);
+                }
+
+                resolve();
+            };
+
+            reader.readAsText(file);
         });
     }
-}
 
-function update(dt) {
-    if (!isRunning && player.state !== 'DYING') return;
+    event.target.value = '';
+});
 
-    if (player.state === 'IDLE' && commandQueue.length > 0) {
-        let cmd = commandQueue.shift();
-        if (cmd.type === 'move') {
-            let rad = player.dir * Math.PI / 180;
-            let nx = player.gx + Math.round(Math.cos(rad));
-            let ny = player.gy + Math.round(Math.sin(rad));
-            let tile = grid[ny * levelWidth + nx];
-            let type = typeof tile === 'object' ? tile.special : tile;
-
-            if ("#N".includes(type) || (type === 'D' && !doorStates[tile.id])) {
-                player.state = 'BUMPING'; animTimer = 0;
-            } else {
-                player.targetGx = nx; player.targetGy = ny;
-                player.state = 'MOVING'; animTimer = 0;
-            }
-        } else {
-            player.targetDir = player.dir + cmd.val;
-            player.state = 'TURNING'; animTimer = 0;
-        }
-    }
-
-    if (player.state !== 'IDLE') {
-        animTimer += dt;
-        let t = Math.min(animTimer / ANIM_SPEED, 1);
-
-        if (player.state === 'MOVING') {
-            player.px = (player.gx + (player.targetGx - player.gx) * MOVE_EASE(t)) * TILE_SIZE;
-            player.py = (player.gy + (player.targetGy - player.gy) * MOVE_EASE(t)) * TILE_SIZE;
-            if (t >= 1) {
-                player.gx = player.targetGx; player.gy = player.targetGy;
-                player.state = 'IDLE';
-                visitedTiles.add(`${player.gx},${player.gy}`);
-                processTile();
-            }
-        } else if (player.state === 'TURNING') {
-            player.currentDir = player.dir + (player.targetDir - player.dir) * MOVE_EASE(t);
-            if (t >= 1) {
-                player.dir = player.targetDir; player.currentDir = player.dir;
-                player.state = 'IDLE';
-            }
-        } else if (player.state === 'BUMPING') {
-            player.bumpOffset = Math.sin(t * 30) * 6;
-            if (t >= 1) window.killLevel("wall_collision");
-        } else if (player.state === 'DYING') {
-            player.scale = 1 - t;
-            player.bumpOffset = Math.sin(t * 50) * 10;
-            if (t >= 1) resetPlayerToStart();
-        }
-    }
-}
-
-function processTile() {
-    let tile = grid[player.gy * levelWidth + player.gx];
-    let type = typeof tile === 'object' ? tile.special : tile;
-
-    if (type === 'I') commandQueue.unshift({ type: 'move' });
-    if (type === 'B') doorStates[tile.opens] = true;
-    if (type === 'S') doorStates[tile.id] = !doorStates[tile.id];
-    if (type === 'E') { isRunning = false; window.onWinGame(); }
-    if (type === 'T') window.killLevel("trap_spike");
-}
-
-function draw() {
-    canvas.width = window.innerWidth * 0.7;
-    canvas.height = window.innerHeight;
-    ctx.imageSmoothingEnabled = false;
-
-    let offsetX = (canvas.width - levelWidth * TILE_SIZE) / 2;
-    let offsetY = (canvas.height - levelHeight * TILE_SIZE) / 2;
-    ctx.save();
-    ctx.translate(offsetX, offsetY);
-
-    autoPaths.forEach(p => {
-        let v1 = visitedTiles.has(`${p.x1},${p.y1}`), v2 = visitedTiles.has(`${p.x2},${p.y2}`);
-        ctx.strokeStyle = (v1 && v2) ? '#a6e3a1' : '#f9e2af';
-        ctx.lineWidth = 6; ctx.beginPath();
-        ctx.moveTo(p.x1 * TILE_SIZE + TILE_SIZE / 2, p.y1 * TILE_SIZE + TILE_SIZE / 2);
-        ctx.lineTo(p.x2 * TILE_SIZE + TILE_SIZE / 2, p.y2 * TILE_SIZE + TILE_SIZE / 2);
-        ctx.stroke();
-    });
-
-    grid.forEach((tile, i) => {
-        let x = i % levelWidth, y = Math.floor(i / levelWidth);
-        let type = typeof tile === 'object' ? tile.special : tile;
-        if (type === 'N') return;
-        ctx.drawImage(IMAGES['.'], x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-        let imgKey = type === 'D' ? (doorStates[tile.id] ? 'D_open' : 'D_closed') : type;
-        if (IMAGES[imgKey]) ctx.drawImage(IMAGES[imgKey], x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-    });
-
-    if (player.scale > 0) {
-        ctx.save();
-        ctx.translate(player.px + TILE_SIZE / 2 + player.bumpOffset, player.py + TILE_SIZE / 2);
-        ctx.rotate(player.currentDir * Math.PI / 180);
-        ctx.scale(player.scale, player.scale);
-        ctx.drawImage(IMAGES['P'], -TILE_SIZE / 2, -TILE_SIZE / 2, TILE_SIZE, TILE_SIZE);
-        ctx.restore();
-    }
-
-    ctx.restore();
-}
-
-
-async function executeCode() {
-    if (currentMode === "blockly") {
-        executeBlocklyCode();
-    }
-    else if (currentMode === "code") {
-        if (!monacoEditorInstance) return;
-        const btn = document.getElementById("exec-btn");
-        if (executingCode === true) {
-            if (timeoutId) clearTimeout(timeoutId);
-            killLevel();
-            if (gameWorker) { gameWorker.terminate() }
-            btn.innerHTML = `<img src="assets/icons/play.svg"> Interrompendo...`;
-            btn.disabled = true;
-            await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-        executingCode = true;
-        btn.style.backgroundColor = "#4b4a4aff";
-        btn.innerHTML = `<img src="assets/icons/play.svg"> Executando...`;
-        btn.style.cursor = "wait";
-        btn.disabled = false;
-        killLevel();
-        setTimeout(async () => {
-            if (typeof loadLevel === 'function') loadLevel(currentLevelIndex);
-            vPlayer.gx = player.gx;
-            vPlayer.gy = player.gy;
-            vPlayer.dir = player.dir;
-            isRunning = true;
-            const userCode = monacoEditorInstance.getValue();
-            try {
-                if (gameWorker) gameWorker.terminate();
-                const sab = new SharedArrayBuffer(1024);
-                const ia = new Int32Array(sab);
-                ia[0] = 0;
-                const workerUrl = await fetch('assets/scripts/worker.js')
-                .then(res => res.text())
-                .then(text => {
-                    const blob = new Blob([text], { type: 'application/javascript' });
-                    return URL.createObjectURL(blob);
-                });
-
-                gameWorker = new Worker(workerUrl);
-                timeoutId = setTimeout(() => {
-                    if (gameWorker && !settings.infiniteLoopAllowed) {
-                        gameWorker.terminate();
-                        gameWorker = null;
-                        if (settings.showErrors) dropdown(`
-                    <h1 style="color: red">Security Error</h1>
-                    <p>Ocorreu um erro na execução do seu script JS:</p>
-                    <p>Seu código foi interrompido porque demorou mais de 3 segundos para responder. Cuidado com loops infinitos!</p>
-                `);
-                        executingCode = false;
-                        btn.style.backgroundColor = "#4CAF50";
-                        btn.innerHTML = `<img src="assets/icons/play.svg"> Rodar Solução`;
-                        btn.style.cursor = "pointer";
-                        killLevel();
-                    }
-                }, 3000);
-                gameWorker.onmessage = async function (e) {
-                    const message = e.data;
-
-                    if (message.type === 'action') {
-                        clearTimeout(timeoutId);
-                        timeoutId = setTimeout(() => {
-                            if (gameWorker && !settings.infiniteLoopAllowed) {
-                                gameWorker.terminate();
-                                gameWorker = null;
-                                if (settings.showErrors) dropdown(`<h1 style="color: red">Security Error</h1><p>Ocorreu um erro na execução do seu script JS:</p><p>Seu código foi interrompido porque demorou mais de 3 segundos para responder. Cuidado com loops infinitos!</p>`);
-                                executingCode = false;
-                                btn.style.backgroundColor = "#4CAF50";
-                                btn.innerHTML = `<img src="assets/icons/play.svg"> Rodar Solução`;
-                                btn.style.cursor = "pointer";
-                                killLevel();
-                            }
-                        }, 3000);
-                        if (message.action === 'advance') {
-                            window.advance();
-                            await new Promise(r => setTimeout(r, 400));
-                        }
-                        else if (message.action === 'rotate_left') {
-                            window.rotate(-90);
-                            await new Promise(r => setTimeout(r, 400));
-                        }
-                        else if (message.action === 'rotate_right') {
-                            window.rotate(90);
-                            await new Promise(r => setTimeout(r, 400));
-                        }
-                        else if (message.action === 'rotate_halfTurn') {
-                            window.rotate(180);
-                            await new Promise(r => setTimeout(r, 400));
-                        }
-                        else if (message.action === 'checkPath') {
-                            const result = typeof window.vCheckPath === 'function' ? (window.vCheckPath(message.param) ? 1 : 0) : 0;
-                            ia[1] = result;
-                        }
-                        else if (message.action === 'checkEnd') {
-                            const reachedEnd = typeof window.vCheckEnd === 'function' ? window.vCheckEnd() : false;
-                            ia[1] = reachedEnd ? 0 : 1;
-                        }
-                        ia[0] = 1;
-                        Atomics.notify(ia, 0, 1);
-                    }
-
-                    else if (message.type === 'status') {
-                        clearTimeout(timeoutId);
-                        gameWorker.terminate();
-                        gameWorker = null;
-
-                        if (message.status === 'error' && settings.showErrors) {
-                            await dropdown(`
-                        <h1 style="color: red">JavaScript Error</h1>
-                        <p>Ocorreu um erro na execução do seu script JS:</p>
-                        <pre style="background: #fdf2f2; color: #b91c1c; padding: 10px; border-radius: 4px; text-align: left;">${message.message}</pre>
-                    `);
-                        }
-                        executingCode = false;
-                        btn.style.backgroundColor = "#4CAF50";
-                        btn.innerHTML = `<img src="assets/icons/play.svg"> Rodar Solução`;
-                        btn.style.cursor = "pointer";
-                    }
-                };
-                gameWorker.postMessage({ jsCode: userCode, sab: sab });
-            } catch (err) {
-                if (err === "ReferenceError: SharedArrayBuffer is not defined" && settings.showErrors) { await dropdown("Error, the user are executing the code in file context, use localhost or a website for the browser to allow the execution.") }; executingCode = false;
-                btn.style.backgroundColor = "#4CAF50";
-                btn.innerHTML = `<img src="assets/icons/play.svg"> Rodar Solução`;
-                btn.style.cursor = "pointer";
-                killLevel();
-            }
-        }, 400);
-    }
-}
-
-createAssets();
-window.startLevel(0);
-function loop(t) {
-    update(t - lastTime);
-    draw();
-    lastTime = t;
-    requestAnimationFrame(loop);
-}
-requestAnimationFrame(loop);
+document.getElementById('musicInput').addEventListener('change', (event) => {
+    if (currentAudio) currentAudio.pause();
+    const file = event.target.files[0];
+    if (!file) return;
+    const musicUrl = URL.createObjectURL(file);
+    currentAudio = new Audio(musicUrl);
+    currentAudio.loop = true;
+    currentAudio.volume = (settings.volumeMaster / 100) * (settings.volumeMusic / 100);
+    currentAudio.play();
+    dropdown(`<h1>Sucesso</h1><p>Música carregada! aproveite para programar!</p>`)
+});
