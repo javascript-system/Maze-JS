@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="assets/icons/player.png">
+    <title>Maze.js -game</title>
+    <link rel="stylesheet" href="assets/scripts/game.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-vsc-dark-plus.min.css">
+</head>
+
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div id="sidebar">
+        <div id="editor-topBar">
+            <h1>Editor</h1>
+            <div id="lang-ico" onclick="toggleEditorMode()">JS</div>
+        </div>
+        <div id="blocklyDiv" style="flex-grow: 1; width: 100%; border: 1px solid #ccc; border-radius: 4px;"></div>
+        <div id="monacoDiv"
+            style="flex-grow: 1; width: 100%; border: 1px solid #ccc; border-radius: 4px; display: none;"></div>
+        <div id="block-counter" style="font-weight: bold; margin-bottom: 10px; color: #d9534f; display: none;">
+            Blocos usados: <span id="used-blocks">0</span> / <span id="max-blocks">∞</span>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="executeCode()" id="exec-btn"><img src="assets/icons/play.svg"> Rodar Solução</button>
+        <button onclick="levelMenu(true)"><img src="assets/icons/levels.svg">Selecionar nível</button>
+        <button id="settings-btn"><img src="assets/icons/settings.svg">Configurações</button>
+        <button onclick="window.location.href = '../index.html'"><img src="assets/icons/back.svg">Menu
+            principal</button>
+    </div>
+
+    <div id="level-menu" class="menu-overlay" style="display: none;">
+        <div class="menu-container">
+            <header class="menu-header">
+                <h1>Seleção de Missões</h1>
+                <button class="close-menu"
+                    style="background-color: red; color: white; font-weight: bold; position: absolute; top: 3%; right: 3%"
+                    onclick="levelMenu(false)">X</button>
+            </header>
+            <div id="chapters-wrapper">
+            </div>
+        </div>
+    </div>
+
+
+
+    <div id="settings-overlay" class="settings-overlay" style="display: none;">
+        <div class="settings-container">
+
+            <div class="settings-header">
+                <div>
+                    <h2>Configurações</h2>
+                    <p>Personalize a sua experiência de jogo e desenvolvimento</p>
+                </div>
+            </div>
+
+            <div class="settings-body">
+
+                <div class="settings-section">
+                    <h3>Acessibilidade</h3>
+
+                    <div class="settings-card">
+                        <div class="card-info">
+                            <label for="cfg-infinite-blocks">Blocos infinitos no Blockly</label>
+                            <span>Caso ativado, as fases não têm limite de blocos no Blockly.</span>
+                        </div>
+                        <input type="checkbox" id="cfg-infinite-blocks" class="settings-checkbox">
+                    </div>
+
+                    <div class="settings-card">
+                        <div class="card-info">
+                            <label for="cfg-all-blocks">Blocos livres no Blockly</label>
+                            <span>Caso ativado, O usuário usar qualquer tipo de bloco mesmo fora de sua fase.</span>
+                            <span>Aviso: caso isso seja ativado, a fase atual não será alterada para o usuário não perder progresso.</span>
+                        </div>
+                        <input type="checkbox" id="cfg-all-blocks" class="settings-checkbox">
+                    </div>
+
+                    <div class="settings-card">
+                        <div class="card-info">
+                            <label for="cfg-show-intro">Mostrar texto de introdução de fases</label>
+                            <span>Ao iniciar uma fase, se ela tiver um texto de introdução, ele não será mostrado se
+                                isso for desativado.</span>
+                        </div>
+                        <input type="checkbox" id="cfg-show-intro" class="settings-checkbox">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Volumes</h3>
+
+                    <div class="settings-card">
+                        <div class="card-info">
+                            <label for="cfg-volume-master">Volume mestre (<span
+                                    id="val-volume-master">100</span>%)</label>
+                            <span>Define o volume base de todos os sons.</span>
+                        </div>
+                        <input type="range" id="cfg-volume-master" min="0" max="100" class="settings-slider">
+                    </div>
+
+                    <div class="settings-card">
+                        <div class="card-info">
+                            <label for="cfg-volume-effects">Efeitos (<span id="val-volume-effects">70</span>%)</label>
+                            <span>Define o volume dos efeitos sonoros.</span>
+                        </div>
+                        <input type="range" id="cfg-volume-effects" min="0" max="100" class="settings-slider">
+                    </div>
+
+                    <div class="settings-card">
+                        <div class="card-info">
+                            <label for="cfg-volume-music">Música (<span id="val-volume-music">65</span>%)</label>
+                            <span>Define o volume da música de fundo.</span>
+                        </div>
+                        <input type="range" id="cfg-volume-music" min="0" max="100" class="settings-slider">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Desenvolvedor</h3>
+                    <div class="settings-card">
+                        <div class="card-info">
+                            <label for="cfg-output-target">Mostrar resultado em</label>
+                            <span>Define a linguagem de programação que aparece no resultado (só funciona ao usar
+                                Blockly).</span>
+                        </div>
+                        <select id="cfg-output-target" class="settings-select">
+                            <option value="javascript">JavaScript</option>
+                            <option value="python">Python</option>
+                        </select>
+                    </div>
+
+                    <div class="settings-card">
+                        <div class="card-info">
+                            <label for="cfg-show-errors">Mostrar mensagem de erro</label>
+                            <span>Caso ativado, se o código tiver um erro de execução, ele será mostrado na
+                                mensagem.</span>
+                        </div>
+                        <input type="checkbox" id="cfg-show-errors" class="settings-checkbox">
+                    </div>
+
+                    <div class="settings-card danger-zone">
+                        <div class="card-info">
+                            <label for="cfg-infinite-loop">Tempo de execução infinita <span class="badge danger">⚠️
+                                    PERIGOSO</span></label>
+                            <span>Caso ativado, os códigos não serão interrompidos por timeout. NOTA: Impede o
+                                salvamento em loops infinitos, travando o jogo.</span>
+                        </div>
+                        <input type="checkbox" id="cfg-infinite-loop" class="settings-checkbox">
+                    </div>
+
+                    <div class="settings-card danger-zone">
+                        <div class="card-info">
+                            <label>Redefinir Configurações</label>
+                            <span>Apaga todas as suas preferências salvas e restaura os valores padrão do jogo.</span>
+                        </div>
+                        <button id="btn-settings-reset" class="settings-action-btn danger">Excluir Dados</button>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Externo <span class="badge experimental">Experimental</span></h3>
+
+                    <div class="settings-card">
+                        <div class="card-info">
+                            <label>Carregar fase customizada</label>
+                            <span>Carrega uma página customizada do jogador através de um arquivo JSON.</span>
+                        </div>
+                        <button class="settings-action-btn" onclick="document.getElementById('levelInput').click()">Carregar JSON</button>
+                    </div>
+
+                    <div class="settings-card">
+                        <div class="card-info">
+                            <label>Carregar música</label>
+                            <span>Carrega uma música para o jogo através de um arquivo
+                                MP3.</span>
+                        </div>
+                        <button class="settings-action-btn" onclick="document.getElementById('musicInput').click()">Carregar MP3</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="settings-footer">
+                <button id="btn-settings-cancel" class="btn-secondary">Sair sem salvar</button>
+                <button id="btn-settings-save" class="btn-primary">Sair e salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="levelInput" accept=".json" style="display: none;">
+    <input type="file" id="musicInput" accept=".mp3" style="display: none;">
+
+    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+    <script src="https://unpkg.com/blockly/msg/pt-br.js"></script>
+    <script src="https://unpkg.com/blockly/javascript_compressed.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+
+    <script src="assets/scripts/content.js"></script>
+    <script src="assets/scripts/levels.js"></script>
+    <script src="assets/scripts/settings.js"></script>
+    <script src="assets/scripts/main.js"></script>
+    <script src="assets/scripts/game.js"></script>
+    <script src="assets/scripts/monaco.js"></script>
+    <script src="assets/scripts/blockly.js"></script>
+</body>
+
+</html>

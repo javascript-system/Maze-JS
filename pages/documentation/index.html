@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze.js -documentation</title>
+    <link rel="icon" href="../../game/assets/icons/player.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">
+            <h1>MazeJS - Documentação</h1>
+        </div>
+        <nav class="nav-links">
+            <a href="../../index.html" class="btn-nav">Página Principal</a>
+            <a href="../../game/play.html" class="btn-primary">Jogar Agora</a>
+        </nav>
+    </header>
+
+    <main class="doc-container">
+        <aside class="doc-sidebar">
+            <h3>Sumário</h3>
+            <ul>
+                <li><a href="#ajuda">❓ Ajuda</a></li>
+                <li><a href="#comandos-js">💻 Comandos JavaScript</a></li>
+                <li><a href="#blocos-blockly">🧩 Blocos Blockly</a></li>
+                <li><a href="#praticas-organizacao">👌 Práticas de organização</a></li>
+                <li><a href="#programacao-fases">🧰 Programação de fases</a></li>
+            </ul>
+        </aside>
+
+        <section class="doc-content">
+
+            <div id="ajuda" class="doc-section">
+                <h2>❓ Ajuda</h2>
+                <h3>Como começar</h3>
+                <p>Para executar seu primeiro código, perceba que tem um menu na direita da sua tela onde tem "Editor" escrito no topo, terá uma caixa de ferramentas com um bloco "Avançar 1 casa", tente arrastar ele para encaixá-lo no bloco "Ao iniciar programa", clique em "Rodar Solução", e veja o jogador andar!</p>
+                <h3>Como programar JavaScript</h3>
+                <p>Para começar a programar JS, repare que no menu de edição, terá no topo da tela um quadrado laranja escrito "BL", ele quer dizer BLockly, que é o seu modo atual de programação, se você clicar nele, ele irá ficar amarelo escrito JS, e irá aparecer o editor de código no lugar do editor de blocos, clique de novo para voltar ao blockly.</p>
+                <h3>O que esperar para o futuro do Maze JS</h3>
+                <p>Para o futuro, já foi pensado adicionar pequenas coisas como modo escuro, mais tipos de linguagens de exibição do Blockly além de JS e PY, mais linguagens além de apenas JS, mais blocos para o blockly, uma variedade grande de fases, corrigir pequenos erros de gramática entre outras features que irão expandir o conteúdo do jogo.</p>
+                <h3>É possível aconteçer acidentes com a execução JS?</h3>
+                <p>Desde que o jogo não seja modificado ou tenha scripts injetados, não, o código usa um Worker seguro que executa o JS de forma separada do site com funções filtradas sem acesso a funções externas/padrões do js/node js.</p>
+                <p>É importante notar que o jogo foi feito para computadores, e não para celulares e/ou tablets.</p>
+            </div>
+
+            <hr>
+
+            <div id="comandos-js" class="doc-section">
+                <h2>💻 API de Comandos JavaScript</h2>
+                <p>Estes são os comandos de texto que os jogadores utilizam para controlar o robô diretamente no editor
+                    de código.</p>
+
+                <div class="cmd-item">
+                    <h3>advance()</h3>
+                    <p>Avança uma posição para frente na direção atual em que o robô está virado.</p>
+                    <pre><code class="language-javascript">advance();</code></pre>
+                </div>
+
+                <div class="cmd-item">
+                    <h3>rotate_right()</h3>
+                    <p>Gira o robô 90 graus para a direita (sentido horário).</p>
+                    <pre><code class="language-javascript">rotate_right();</code></pre>
+                </div>
+
+                <div class="cmd-item">
+                    <h3>rotate_left()</h3>
+                    <p>Gira o robô 90 graus para a esquerda (sentido anti-horário).</p>
+                    <pre><code class="language-javascript">rotate_left();</code></pre>
+                </div>
+
+                <div class="cmd-item">
+                    <h3>rotate_halfTurn()</h3>
+                    <p>Faz o robô dar uma meia volta completa (gira 180 graus).</p>
+                    <pre><code class="language-javascript">rotate_halfTurn();</code></pre>
+                </div>
+
+                <div class="cmd-item">
+                    <h3>did_not_reach_the_end()</h3>
+                    <p>Retorna um valor booleano (<code>true</code> ou <code>false</code>). Útil para criar loops até
+                        que o objetivo seja cumprido.</p>
+                    <pre><code class="language-javascript">while (did_not_reach_the_end()) {
+    advance();
+}</code></pre>
+                </div>
+
+                <div class="cmd-item">
+                    <h3>path_is_clear(direction)</h3>
+                    <p>Verifica se o caminho está livre de obstáculos na direção informada. Retorna <code>true</code> se
+                        estiver livre.</p>
+                    <p><strong>Parâmetros aceitos:</strong> <code>'front'</code>, <code>'right'</code>,
+                        <code>'left'</code>, <code>'back'</code>.
+                    </p>
+                    <pre><code class="language-javascript">if (path_is_clear('front')) {
+    advance();
+} else {
+    rotate_right();
+}</code></pre>
+                </div>
+            </div>
+
+            <hr>
+
+            <div id="blocos-blockly" class="doc-section">
+                <h2>🧩 Blocos customizados (Blockly)</h2>
+                <p>Para quem joga no modo visual, estes são os blocos customizados do MazeJS:</p>
+
+                <table class="block-table">
+                    <thead>
+                        <tr>
+                            <th>Visual do Bloco</th>
+                            <th>Tipo / Identificador</th>
+                            <th>Descrição / Tooltip</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><img src="blocks/start_block.png" alt="Bloco Ao Iniciar" class="block-preview"></td>
+                            <td><code>start_block</code></td>
+                            <td><strong>Ao iniciar programa:</strong> O código deve começar aqui. Coloque seus comandos
+                                dentro ou abaixo dele. O robô começará a leitura por este bloco.</td>
+                        </tr>
+                        <tr>
+                            <td><img src="blocks/advance.png" alt="Bloco Avançar" class="block-preview"></td>
+                            <td><code>move_advance</code></td>
+                            <td><strong>Avançar 1 casa:</strong> Faz o robô andar uma casa para a frente na direção
+                                atual.</td>
+                        </tr>
+                        <tr>
+                            <td><img src="blocks/rotate.png" alt="Bloco Virar" class="block-preview"></td>
+                            <td><code>rotate_player</code></td>
+                            <td><strong>Virar para a [Direção]:</strong> Permite selecionar através de um menu se o robô
+                                deve virar para a <em>Direita ⟳</em>, <em>Esquerda ⟲</em> ou dar <em>Meia volta 🔄</em>.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><img src="blocks/repeat_until_end.png" alt="Bloco Repita" class="block-preview"></td>
+                            <td><code>repeat_until_end</code></td>
+                            <td><strong>Repita até o final:</strong> Executa todos os blocos internos em loop contínuo
+                                até que o robô pise no bloco de Saída do labirinto.</td>
+                        </tr>
+                        <tr>
+                            <td><img src="blocks/check_path.png" alt="Bloco Verificar Caminho" class="block-preview">
+                            </td>
+                            <td><code>check_path</code></td>
+                            <td><strong>Caminho livre a [Direção]:</strong> Bloco condicional que verifica se há um
+                                caminho seguro na direção escolhida (frente, trás, direita, esquerda). Retorna
+                                verdadeiro ou falso.</td>
+                        </tr>
+                        <tr>
+                            <td><img src="blocks/if.png" alt="Bloco Verificar Caminho" class="block-preview"></td>
+                            <td><code>controls_if</code></td>
+                            <td><strong>Se [Condição] fazer:</strong> Bloco condicional que verifica se uma condição é
+                                verdadeira ou falsa para executar um código relacionado.</td>
+                        </tr>
+                        <tr>
+                            <td><img src="blocks/check_path.png" alt="Bloco Verificar Caminho" class="block-preview">
+                            </td>
+                            <td><code>controls_repeat</code></td>
+                            <td><strong>Repetir [Quantidade] vezes:</strong> Executa um código várias vezes seguidas.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <hr>
+
+            <div id="praticas-organizacao" class="doc-section">
+                <h2>👌 Práticas de organização</h2>
+                <p>No blockly não existe organização, oque o usuário precisa é passar o nível com a quantidade de blocos correta, mas no JavaScript é diferente, pois não é sobre blocos, e sim sobre tempo de execução.</p>
+                <p>O motor de execução do JS tem uma lógica simples: se o código demorar 3+ segundos para responder entre um comando e outro, ele será interrompido, é difícil atingir este tempo, mas é sempre bom usar as práticas de organização.</p>
+                <p>Existem várias práticas boas que o programador pode inventar para resolver problemas e conseguir organização, mas é emprotante lembrar que antes de organizar qualquer coisa, você que ter algo que funciona, então o usuário pode evitar repetir comandos iguais, ao invés de:</p>
+                <pre class="language-javascript"><code class="language-javascript">
+advance();
+advance();
+advance();
+advance();
+                </code></pre>
+                <p>Você pode criar uma função:</p>
+                <pre class="language-javascript"><code class="language-javascript">
+function andar2() {
+    advance();
+    advance();
+}
+
+andar2();
+andar2();
+
+//Ou até mesmo usar um loop inteligente:
+function loop(times, code) {
+	for (let i = 0; i < times; i++) {
+		code();
+	}
+}
+
+loop(4, () => { advance() }); //executa "advance()" quatro vezes seguidas!
+
+/*Melhor ainda! usar a referência da função, e let/const para definir uma variável,
+um valor que pode ser usado dentro de vários lugares
+(emportante: pode se usar let x = 10; x = 3 para sobreescrever,
+mas o const não deixa isso por ser constante)*/
+const times = 4;
+loop(times, advance);
+                </code></pre>
+                <p>E muitas vezes pode parecer inútil, mas usar comentários é muito bom para organizar o código! dentre eles existe o comentário de linha, e o comentário de bloco, a diferença é que um ocupa uma linha com //texto, e o outro várias com /*texto*/, tudo que estiver dentro dos comentários será ignorado, veja um exemplo:</p>
+                <pre class="language-javascript"><code class="language-javascript">
+advance(); //O jogador avança para passar no cubo de gelo.
+
+//O jogador vira para atravessar a curva.
+rotate_right();
+
+/*O jogador anda sem virar para a esquerda.
+Se ele fosse para a esquerda ele iria bater em um espinho.*/
+advance();
+                </code></pre>
+            </div>
+
+            <hr>
+
+            <div id="programacao-fases" class="doc-section">
+                <h2>🧰 Programação de fases</h2>
+                <p>O jogo tem um sistema de fases customizadas, para fazer a sua, você deve programar um arquivo Json, e
+                    dentro do jogo ir em configurações > Externo, selecione o botão (Carregar JSON) dentro da opção de
+                    nível costumizado e selecione sua fase.</p>
+                <p>A estrutura JSON deve seguir:</p>
+                <pre class="language-javascript">
+                    <code class="language-javascript">
+{
+    "name": "Nível customizado", //define o nome do nível
+    "initialMessage": "&lt;p&gt;Nível customizado!&lt;/p&gt;", //define uma mensagem para a fase (opcional)
+    "blocksBlocked": ["repeat_until_end"], //define os blocos que não podem ser usados
+    "maxBlocks": 6, //define a quantidade máxima de blocos que podem ser usados (opcional)
+    "difficulty": "⭐⭐☆☆☆", //define uma string de  dificuldade
+    "width": 9, //define a largura do nível para o jogo saber como usar o Array
+    "layout": [
+    "N", "N", "N", "N", "N", "N", "N", "N", "N", "N",
+    "#", "P", ".", ".", ".", ".", ".", "N", "N", "N",
+    "#", "#", "#", "#", "#", "#", ".", "N", "N", "N",
+    "#", { "special": "S", "id": 1 }, ".", ".", ".", ".", ".", { "special": "D", "id": 2 }, "E", "N",
+    "#", "#", "#", "#", "#", "#", { "special": "D", "id": 1 }, "N", "N", "N",
+    "#", ".", ".", { "special": "B", "opens": 2 }, { "special": "S", "id": 1 }, ".", ".", "N", "N", "N",
+     "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"
+    ]
+}</code>
+                </pre>
+                <h3>importante:</h3>
+                <ul>
+                    <li>Não use os comentários // no seu arquivo Json! os navegadores não suportam isso</li>
+                    <li>É recomendado usar estrelas na string de dificuldade pois o jogo decora o texto com elas; Para
+                        copiar: ☆⭐🌟✨</li>
+                    <li>É recomendado usar o <a href="https://vscode.dev">vscode</a> para validar a sintaxe do arquivo</li>
+                    <li>Note que no atributo layout tem algumas letras, e alguns Objetos dentro de chaves, eles
+                        funcionam de uma forma bem básica:<br>Os <strong>blocos simples</strong> são aqueles que são
+                        escritos entre "" separados por vírgula, dentre eles, tem os tipos:<ul><br>
+                            <li>"." -> Ele equivale ao chão seguro que o jogador pode atravessar.</li>
+                            <li>"N" -> Nada, se o jogador chegar lá ele morre.</li>
+                            <li>"P" -> É o spawn do jogador, ele define onde o jogador irá começar.</li>
+                            <li>"E" -> É o final da fase, se o jogador pisar, ele ganha.</li>
+                            <li>"#" -> É uma parede, funciona que nem o "N" só que com desenho.</li>
+                            <li>"T" -> É um espinho, se o jogador pisa ele morre.</li>
+                            <li>"I" -> Um pouco mais complicado, ele é um bloco de gelo, que serve para prolongar o caminho do jogador, por exemplo, se você tiver uma fila: <code class="language-javascript">["P", "I", "I", "I", ".", "E"]</code>, basta usar um movimento de avançar, que você escorrega pelos 3 blocos de gelo e chega no "."!</li>
+                        <br></ul>
+                        <p>Já os <strong>Blocos avançados</strong>, são blocos nos quais você pode interagir, dentre eles tem os tipos:</p><br><ul>
+                            <li><code class="language-javascript">{ "special": "S", "id": 1 }</code> -> Esse bloco é um switch, ele é simples, você conecta ele com um "id", que será exatamente o mesmo "id" de uma porta, e ao pisar, ele abre, mas ao pisar novamente ele fecha a porta.</li><br>
+                            <li><code class="language-javascript">{ "special": "B", "opens": 2}</code> -> Esse bloco é um botão, ele funciona exatamente igual a um switch, a diferença é que ele só pode abrir a porta 1 uma vez, ele nunca mais pode ser apertado, e no lugar do "id", ele usa "opens" que também segue o "id" de uma porta.</li><br>
+                            <li><code class="language-javascript">{"special": "D", "id": 3 }</code> -> Esse bloco é uma porta, ela é fechada e atua como uma parede "#", mas ao conectar um Switch/Botão com o mesmo id dela, ela pode ser aberta e atuar como chão "."</li><br>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 MazeJS. Todos os direitos reservados.</p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+
+</html>
