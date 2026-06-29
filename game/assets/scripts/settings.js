@@ -8,7 +8,8 @@ const DEFAULT_SETTINGS = {
     showErrors: true,
     infiniteBlocks: false,
     infiniteLoopAllowed: false,
-    allBlocks: false
+    allBlocks: false,
+    deathMsg: true
 };
 
 function getConfigs() {
@@ -23,12 +24,10 @@ function getConfigs() {
 
 function settingsMenu(show) {
     const overlay = document.getElementById("settings-overlay");
-
     if (!show) {
         overlay.style.display = "none";
         return Promise.resolve({ reason: "Closed" });
     }
-
     const currentSettings = getConfigs();
     document.getElementById("cfg-all-blocks").checked = currentSettings.allBlocks;
     document.getElementById("cfg-show-intro").checked = currentSettings.showIntro;
@@ -39,6 +38,7 @@ function settingsMenu(show) {
     document.getElementById("cfg-show-errors").checked = currentSettings.showErrors;
     document.getElementById("cfg-infinite-blocks").checked = currentSettings.infiniteBlocks;
     document.getElementById("cfg-infinite-loop").checked = currentSettings.infiniteLoopAllowed;
+    document.getElementById("cfg-death-msg").checked = currentSettings.deathMsg;
     const volumeSliders = ['master', 'effects', 'music'];
     volumeSliders.forEach(type => {
         const slider = document.getElementById(`cfg-volume-${type}`);
@@ -70,10 +70,11 @@ function settingsMenu(show) {
                 outputTarget: document.getElementById("cfg-output-target").value,
                 showErrors: document.getElementById("cfg-show-errors").checked,
                 infiniteBlocks: document.getElementById("cfg-infinite-blocks").checked,
-                infiniteLoopAllowed: document.getElementById("cfg-infinite-loop").checked
+                infiniteLoopAllowed: document.getElementById("cfg-infinite-loop").checked,
+                deathMsg: document.getElementById("cfg-death-msg").checked
             };
 
-            window.updateBlocklyLevel();
+            window.updateBlocklyLevel(levels[currentLevelIdx].maxBlocks, levels[currentLevelIdx].blocksBlocked);
             localStorage.setItem("game_settings", JSON.stringify(updatedSettings));
             cleanUp();
             resolve(updatedSettings);
