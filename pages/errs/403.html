@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403</title>
+    <style>
+        body {
+            background-color: #f4f4f9;
+            color: #333;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .error-container {
+            background: #ffffff;
+            padding: 50px 40px;
+            border-radius: 16px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .error-code {
+            font-size: 96px;
+            font-weight: 800;
+            color: #f44336;
+            margin: 0;
+            line-height: 1;
+            letter-spacing: -2px;
+        }
+
+        .error-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #111827;
+            margin: 20px 0 10px 0;
+        }
+
+        .error-message {
+            font-size: 16px;
+            color: #4b5563;
+            line-height: 1.6;
+            margin: 0 0 30px 0;
+        }
+
+        .btn-back {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+        }
+
+        .btn-back:hover {
+            background-color: #439a46;
+            transform: translateY(-1px);
+        }
+
+        .btn-back:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="error-container">
+        <div class="error-code">403</div>
+        <div class="error-title">Parece que você bateu na parede!</div>
+        <p class="error-message">
+            A página que você está procurando se recusou a carregar no labirinto do MazeJS. Lembre-se que a página pode:<br>Não ter sido carregada automáticamente<br>Ter sido um erro interno<br>Você entrou no jogo usando um celular
+        </p>
+        <a href="../../index.html" class="btn-back">Voltar ao Início</a>
+    </div>
+
+</body>
+</html>
