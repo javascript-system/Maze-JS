@@ -69,7 +69,6 @@ window.onWinGame = async () => {
     executingCode = false;
     if (timeoutId) { clearTimeout(timeoutId) };
     if (gameWorker) { gameWorker.terminate() };
-    document.getElementById("exec-btn").style.cursor = "pointer";
     let displayCode = "";
     const langToDisplay = settings.outputTarget;
 
@@ -124,7 +123,6 @@ window.onLooseGame = async (reason) => {
     executingCode = false;
     if (timeoutId) { clearTimeout(timeoutId) };
     if (gameWorker) { gameWorker.terminate() };
-    document.getElementById("exec-btn").style.cursor = "pointer";
     await dropdown(`
         <h1>Ops! você perdeu</h1>
         <p>Você morreu pois ${reason}, tente novamente.</p>
