@@ -66,8 +66,10 @@ window.onWinGame = async () => {
     const win = new Audio('assets/audios/win.mp3');
     win.volume = (settings.volumeMaster / 100) * (settings.volumeEffects / 100);
     win.play();
+    executingCode = false;
     if (timeoutId) { clearTimeout(timeoutId) };
     if (gameWorker) { gameWorker.terminate() };
+    document.getElementById("exec-btn").style.cursor = "pointer";
     let displayCode = "";
     const langToDisplay = settings.outputTarget;
 
@@ -119,8 +121,10 @@ window.onLooseGame = async (reason) => {
     const loose = new Audio('assets/audios/loose.mp3');
     loose.volume = (settings.volumeMaster / 100) * (settings.volumeEffects / 100);
     loose.play();
+    executingCode = false;
     if (timeoutId) { clearTimeout(timeoutId) };
     if (gameWorker) { gameWorker.terminate() };
+    document.getElementById("exec-btn").style.cursor = "pointer";
     await dropdown(`
         <h1>Ops! você perdeu</h1>
         <p>Você morreu pois ${reason}, tente novamente.</p>
