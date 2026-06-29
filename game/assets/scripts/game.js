@@ -5,6 +5,7 @@ let gameWorker = null;
 let timeoutId = null;
 let lastExecutionDuration = null;
 let executionStartTime = null;
+let currentLevelIdx = 0;
 
 let canvas = document.getElementById('gameCanvas');
 let ctx = canvas.getContext('2d');
@@ -40,74 +41,24 @@ function createAssets() {
         return img;
     };
 
-    IMAGES['#'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#45475a'; c.fillRect(0, 0, 16, 16);
-        c.fillStyle = '#313244'; c.fillRect(1, 1, 14, 14);
-        c.fillStyle = '#1e1e2e'; c.fillRect(4, 4, 8, 8);
-    });
-    IMAGES['.'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#ffffff'; c.fillRect(0, 0, 16, 16);
-        c.fillStyle = '#f0f0f0'; c.fillRect(0, 0, 1, 16); c.fillRect(0, 0, 16, 1);
-    });
-    IMAGES['P'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#f9e2af'; c.fillRect(3, 3, 10, 10);
-        c.fillStyle = '#11111b'; c.fillRect(10, 5, 3, 2); c.fillRect(10, 9, 3, 2);
-    });
-    IMAGES['I'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#89dceb'; c.fillRect(0, 0, 16, 16);
-        c.fillStyle = '#ffffff'; c.globalAlpha = 0.5; c.fillRect(2, 2, 4, 1); c.fillRect(8, 10, 5, 1);
-    });
-    IMAGES['D_closed'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#fab387'; c.fillRect(2, 2, 12, 12);
-        c.fillStyle = '#45475a'; c.fillRect(7, 6, 2, 4);
-    });
-    IMAGES['D_open'] = drawToImg(16, 16, c => {
-        c.strokeStyle = '#fab387'; c.lineWidth = 1; c.strokeRect(2, 2, 12, 12);
-    });
-    IMAGES['B'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#f38ba8'; c.beginPath(); c.arc(8, 8, 5, 0, 7); c.fill();
-        c.fillStyle = '#11111b'; c.fillRect(6, 6, 4, 4);
-    });
-    IMAGES['E'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#a6e3a1'; c.fillRect(2, 2, 12, 12);
-        c.fillStyle = '#ffffff'; c.fillRect(6, 4, 4, 8); c.fillRect(4, 6, 8, 4);
-    });
-    IMAGES['T'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#eba0ac';
-        const startX = 0.5;
-        for (let i = 0; i < 3; i++) {
-            const baseLeft = startX + (i * 5);
-            const baseRight = baseLeft + 5;
-            const centerX = baseLeft + 2.5;
-            const topY = 2;
-            const bottomY = 14;
-            c.beginPath();
-            c.moveTo(baseLeft, bottomY);
-            c.lineTo(centerX, topY);
-            c.lineTo(baseRight, bottomY);
-            c.closePath();
-            c.fill();
-            c.fillStyle = 'rgba(0,0,0,0.1)';
-            c.beginPath();
-            c.moveTo(centerX, topY);
-            c.lineTo(baseRight, bottomY);
-            c.lineTo(centerX, bottomY);
-            c.fill();
-            c.fillStyle = '#eba0ac';
-        }
-    });
-    IMAGES['S'] = drawToImg(16, 16, c => {
-        c.fillStyle = '#cba6f7'; c.fillRect(4, 4, 8, 8);
-        c.fillStyle = '#ffffff'; c.fillRect(7, 5, 2, 6);
-    });
+    IMAGES['#'] = drawToImg(16, 16, c => { textures.wall(c) });
+    IMAGES['.'] = drawToImg(16, 16, c => { textures.floor(c) });
+    IMAGES['P'] = drawToImg(16, 16, c => { textures.player(c) });
+    IMAGES['I'] = drawToImg(16, 16, c => { textures.ice(c) });
+    IMAGES['D_closed'] = drawToImg(16, 16, c => { textures.door.closed(c) });
+    IMAGES['D_open'] = drawToImg(16, 16, c => { textures.door.opened(c) });
+    IMAGES['B'] = drawToImg(16, 16, c => { textures.button(c) });
+    IMAGES['E'] = drawToImg(16, 16, c => { textures.end(c) });
+    IMAGES['T'] = drawToImg(16, 16, c => { textures.trap(c) });
+    IMAGES['S'] = drawToImg(16, 16, c => { textures.switch(c) });
 }
-
 
 let vPlayer = { gx: 0, gy: 0, dir: 0 };
 let isFirstTimeInLevel = true;
 
 window.startLevel = async (idx) => {
     isFirstTimeInLevel = true;
+    currentLevelIdx = idx;
     loadLevel(idx);
     if (window.updateBlocklyLevel) {
         window.updateBlocklyLevel(levels[idx].maxBlocks, levels[idx].blocksBlocked);
@@ -119,16 +70,19 @@ window.startLevel = async (idx) => {
 
     isRunning = true;
 };
+
 window.advance = () => {
     let rad = vPlayer.dir * Math.PI / 180;
     vPlayer.gx += Math.round(Math.cos(rad));
     vPlayer.gy += Math.round(Math.sin(rad));
     commandQueue.push({ type: 'move' });
 };
+
 window.rotate = (deg) => {
     vPlayer.dir = (vPlayer.dir + deg) % 360;
     commandQueue.push({ type: 'turn', val: deg });
 };
+
 window.vCheckPath = (direction) => {
     let currentDir = ((vPlayer.dir % 360) + 360) % 360;
     let checkDir = currentDir;
@@ -310,13 +264,33 @@ function draw() {
     ctx.restore();
 }
 
+async function resetExecBtn(error = false) {
+    const btn = document.getElementById('exec-btn');
+    if (error) {
+        btn.disabled = true;
+        btn.style.cursor = "not-allowed";
+        btn.style.backgroundColor = "#9b1c1cff";
+        btn.innerHTML = `<img src="assets/icons/play.svg"> Erro.`;
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        btn.disabled = false;
+    }
+    btn.style.backgroundColor = "#4CAF50";
+    btn.innerHTML = `<img src="assets/icons/play.svg"> Rodar Solução`;
+    btn.style.cursor = "pointer";
+}
 
 async function executeCode() {
+    const btn = document.getElementById("exec-btn");
     if (currentMode === "blockly") {
+        btn.style.backgroundColor = "#4c4e4cff";
+        btn.innerHTML = `<img src="assets/icons/play.svg"> Executando...`;
+        btn.disabled = false;
+        btn.style.cursor = "wait";
+        executingCode = true;
         executeBlocklyCode();
+        executingCode = false;
     }
     else if (currentMode === "code") {
-        if (!monacoEditorInstance) return;
         const btn = document.getElementById("exec-btn");
         if (executingCode === true) {
             if (timeoutId) clearTimeout(timeoutId);
@@ -328,9 +302,10 @@ async function executeCode() {
             await new Promise(resolve => setTimeout(resolve, 2000));
         }
         executingCode = true;
-        btn.style.backgroundColor = "#4CAF50";
-        btn.innerHTML = `<img src="assets/icons/play.svg"> Rodar Solução`;
+        btn.style.backgroundColor = "#4c4e4cff";
+        btn.innerHTML = `<img src="assets/icons/play.svg"> Executando...`;
         btn.disabled = false;
+        btn.style.cursor = "wait";
         killLevel();
         setTimeout(async () => {
             if (typeof loadLevel === 'function') loadLevel(currentLevelIndex);
@@ -347,18 +322,18 @@ async function executeCode() {
                 const ia = new Int32Array(sab);
                 ia[0] = 0;
                 gameWorker = new Worker('assets/scripts/worker.js');
-                timeoutId = setTimeout(() => {
+                timeoutId = setTimeout(async () => {
                     if (gameWorker && !settings.infiniteLoopAllowed) {
                         gameWorker.terminate();
                         gameWorker = null;
-                        if (settings.showErrors) dropdown(`
+                        if (settings.showErrors) await dropdown(`
                     <h1 style="color: red">Security Error</h1>
                     <p>Ocorreu um erro na execução do seu script JS:</p>
                     <p>Seu código foi interrompido porque demorou mais de 3 segundos para responder. Cuidado com loops infinitos!<br>Note que isso também pode ser um bug ou uma falha do jogo, caso isso aconteça, tente recarregar a oágina ou tentar novamente.</p>
                 `);
                         executingCode = false;
-                        btn.style.cursor = "pointer";
                         killLevel();
+                        resetExecBtn(true);
                     }
                 }, 3000);
                 gameWorker.onmessage = async function (e) {
@@ -366,14 +341,14 @@ async function executeCode() {
 
                     if (message.type === 'action') {
                         clearTimeout(timeoutId);
-                        timeoutId = setTimeout(() => {
+                        timeoutId = setTimeout(async () => {
                             if (gameWorker && !settings.infiniteLoopAllowed) {
                                 gameWorker.terminate();
                                 gameWorker = null;
-                                if (settings.showErrors) dropdown(`<h1 style="color: red">Security Error</h1><p>Ocorreu um erro na execução do seu script JS:</p><p>Seu código foi interrompido porque demorou mais de 3 segundos para responder. Cuidado com loops infinitos!</p>`);
+                                if (settings.showErrors) await dropdown(`<h1 style="color: red">Security Error</h1><p>Ocorreu um erro na execução do seu script JS:</p><p>Seu código foi interrompido porque demorou mais de 3 segundos para responder. Cuidado com loops infinitos!</p>`);
                                 executingCode = false;
-                                btn.style.cursor = "pointer";
                                 killLevel();
+                                resetExecBtn(true)
                             }
                         }, 3000);
                         if (message.action === 'advance') {
@@ -417,7 +392,7 @@ async function executeCode() {
                     `);
                         }
                         executingCode = false;
-                        btn.style.cursor = "pointer";
+                        resetExecBtn(true);
                     }
                 };
                 gameWorker.postMessage({ jsCode: userCode, sab: sab });
@@ -425,8 +400,8 @@ async function executeCode() {
                 if (err.includes("SharedArrayBuffer") && settings.showErrors) { await dropdown("<h1>Security Error</h1><p>the user are executing the code in file context, use localhost or a website for the browser to allow the execution. or go to the <a href=\"https://maze-js.onrender.com/game/play.html\">official game</a>.</p>") }
                 else { alert(err) };
                 executingCode = false;
-                btn.style.cursor = "pointer";
                 killLevel();
+                resetExecBtn(true);
             }
         }, 400);
     }
