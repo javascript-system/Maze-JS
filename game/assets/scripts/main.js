@@ -65,6 +65,7 @@ window.dropdown = function (htmlContent) {
 window.onWinGame = async () => {
     const endTime = performance.now();
     lastExecutionDuration = ((endTime - executionStartTime) / 1000).toFixed(2);
+    resetExecBtn();
     const win = new Audio('assets/audios/win.mp3');
     win.volume = (settings.volumeMaster / 100) * (settings.volumeEffects / 100);
     win.play();
@@ -116,10 +117,12 @@ window.onWinGame = async () => {
         }
         const langNames = { javascript: "JavaScript", python: "Python", cpp: "C++" };
         const currentLangName = langNames[langToDisplay] || "language";
+        const allBlocks = workspace.getAllBlocks(false).filter(b => !b.isShadow());
+        const usedCount = allBlocks.length;
 
         await dropdown(`
             <h1>Parabéns! Nível ${currentLevelIndex + 1} Concluído!</h1>
-            <p>Veja como ficou a sua lógica em ${displayCode.split(/\r?\n/).length} linhas de ${currentLangName}:</p>
+            <p>Você passou de nível usando ${usedCount} Veja como ficou a sua lógica em ${displayCode.split(/\r?\n/).length} linhas de ${currentLangName}:</p>
             <pre><code class="language-${langToDisplay}">${displayCode}</code></pre>
         `);
     } else {
@@ -139,7 +142,7 @@ window.onWinGame = async () => {
     } else {
         await dropdown(`
             <h1>🏆 VOCÊ ZEROU O MAZEJS!</h1>
-            <p>Parabéns! Você completou todos os desafios! Sabemos que esse final não foi o melhor de todos, mas agradeçemos a ajuda que você nos deu apenas jogando o jogo.<br><a href="https://maze-js.onrender.com/pages/credits/index.html">Créditos</a><br>O jogo será reiniciado ao usar OK.</p>
+            <p>Parabéns! Você completou todos os desafios! Sabemos que esse final não foi o melhor de todos, mas agradeçemos a ajuda que você nos deu apenas jogando o jogo.<br><a href="https://maze-js.onrender.com/pages/credits/index.html">Créditos</a><br>O jogo será reiniciado ao clicar em [Continuar].</p>
         `);
         location.reload();
     }
@@ -147,15 +150,18 @@ window.onWinGame = async () => {
 
 window.onLooseGame = async (reason) => {
     const loose = new Audio('assets/audios/loose.mp3');
+    resetExecBtn();
     loose.volume = (settings.volumeMaster / 100) * (settings.volumeEffects / 100);
     loose.play();
     executingCode = false;
     if (timeoutId) { clearTimeout(timeoutId) };
     if (gameWorker) { gameWorker.terminate() };
-    await dropdown(`
+    if (settings.deathMsg) {
+        await dropdown(`
         <h1>Ops! você perdeu</h1>
         <p>Você morreu pois ${reason}, tente novamente.</p>
     `)
+    }
 };
 
 window.toggleEditorMode = function () {
@@ -332,3 +338,9 @@ document.getElementById('musicInput').addEventListener('change', (event) => {
     currentAudio.play();
     dropdown(`<h1>Sucesso</h1><p>Música carregada! aproveite para programar!</p>`)
 });
+
+console.log(
+  "%cA V I S O %c\n\nO criador do jogo javascript-system não se responsabiliza por qualquer código injetado. A execução de scripts externos pode causar acidentes no funcionamento do jogo ou comprometer o Worker de execução JS.",
+  "background-color: #ff0000; color: #ffffff; font-size: 30px; font-weight: bold; padding: 10px 20px; border-radius: 5px; font-family: sans-serif; display: block; text-align: center; border: 2px solid #990000;",
+  "color: #ff3333; font-size: 14px; font-weight: bold; font-family: sans-serif; line-height: 1.5;"
+);
