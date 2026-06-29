@@ -339,8 +339,12 @@ document.getElementById('musicInput').addEventListener('change', (event) => {
     dropdown(`<h1>Sucesso</h1><p>Música carregada! aproveite para programar!</p>`)
 });
 
+if (window.matchMedia("(orientation: portrait)").matches) {
+    window.location.href = "../pages/errs/403.html"
+}
+
 console.log(
-  "%cA V I S O %c\n\nO criador do jogo javascript-system não se responsabiliza por qualquer código injetado. A execução de scripts externos pode causar acidentes no funcionamento do jogo ou comprometer o Worker de execução JS.",
-  "background-color: #ff0000; color: #ffffff; font-size: 30px; font-weight: bold; padding: 10px 20px; border-radius: 5px; font-family: sans-serif; display: block; text-align: center; border: 2px solid #990000;",
-  "color: #ff3333; font-size: 14px; font-weight: bold; font-family: sans-serif; line-height: 1.5;"
+    "%cA V I S O %c\n\nO criador do jogo javascript-system não se responsabiliza por qualquer código injetado. A execução de scripts externos pode causar acidentes no funcionamento do jogo ou comprometer o Worker de execução JS.",
+    "background-color: #ff0000; color: #ffffff; font-size: 30px; font-weight: bold; padding: 10px 20px; border-radius: 5px; font-family: sans-serif; display: block; text-align: center; border: 2px solid #990000;",
+    "color: #ff3333; font-size: 14px; font-weight: bold; font-family: sans-serif; line-height: 1.5;"
 );
