@@ -325,7 +325,6 @@ async function executeCode() {
             await new Promise(resolve => setTimeout(resolve, 2000));
         }
         executingCode = true;
-        btn.style.cursor = "wait";
         btn.style.backgroundColor = "#4CAF50";
         btn.innerHTML = `<img src="assets/icons/play.svg"> Rodar Solução`;
         btn.disabled = false;
