@@ -68,13 +68,6 @@ window.onWinGame = async () => {
     win.play();
     if (timeoutId) { clearTimeout(timeoutId) };
     if (gameWorker) { gameWorker.terminate() };
-    const btn = document.getElementById("exec-btn");
-    executingCode = false;
-    btn.style.backgroundColor = "#4CAF50";
-    btn.innerHTML = `<img src="assets/icons/play.svg"> Rodar Solução`;
-    btn.style.cursor = "pointer";
-
-
     let displayCode = "";
     const langToDisplay = settings.outputTarget;
 
@@ -128,11 +121,6 @@ window.onLooseGame = async (reason) => {
     loose.play();
     if (timeoutId) { clearTimeout(timeoutId) };
     if (gameWorker) { gameWorker.terminate() };
-    const btn = document.getElementById("exec-btn");
-    executingCode = false;
-    btn.style.backgroundColor = "#4CAF50";
-    btn.innerHTML = `<img src="assets/icons/play.svg"> Rodar Solução`;
-    btn.style.cursor = "pointer";
     await dropdown(`
         <h1>Ops! você perdeu</h1>
         <p>Você morreu pois ${reason}, tente novamente.</p>
