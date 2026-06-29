@@ -66,8 +66,14 @@ window.onWinGame = async () => {
     const win = new Audio('assets/audios/win.mp3');
     win.volume = (settings.volumeMaster / 100) * (settings.volumeEffects / 100);
     win.play();
-    if (gameWorker) { gameWorker.terminate() }
-    if (timeoutId) clearTimeout(timeoutId);
+    if (timeoutId) { clearTimeout(timeoutId) };
+    if (gameWorker) { gameWorker.terminate() };
+    const btn = document.getElementById("exec-btn");
+    executingCode = false;
+    btn.style.backgroundColor = "#4CAF50";
+    btn.innerHTML = `<img src="assets/icons/play.svg"> Rodar Solução`;
+    btn.style.cursor = "pointer";
+
 
     let displayCode = "";
     const langToDisplay = settings.outputTarget;
@@ -120,8 +126,13 @@ window.onLooseGame = async (reason) => {
     const loose = new Audio('assets/audios/loose.mp3');
     loose.volume = (settings.volumeMaster / 100) * (settings.volumeEffects / 100);
     loose.play();
-    if (gameWorker) { gameWorker.terminate() }
-    if (timeoutId) clearTimeout(timeoutId);
+    if (timeoutId) { clearTimeout(timeoutId) };
+    if (gameWorker) { gameWorker.terminate() };
+    const btn = document.getElementById("exec-btn");
+    executingCode = false;
+    btn.style.backgroundColor = "#4CAF50";
+    btn.innerHTML = `<img src="assets/icons/play.svg"> Rodar Solução`;
+    btn.style.cursor = "pointer";
     await dropdown(`
         <h1>Ops! você perdeu</h1>
         <p>Você morreu pois ${reason}, tente novamente.</p>
