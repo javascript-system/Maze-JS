@@ -3,6 +3,8 @@ const ANIM_SPEED = 250;
 const MOVE_EASE = (t) => t * t * (3 - 2 * t);
 let gameWorker = null;
 let timeoutId = null;
+let lastExecutionDuration = null;
+let executionStartTime = null;
 
 let canvas = document.getElementById('gameCanvas');
 let ctx = canvas.getContext('2d');
@@ -320,6 +322,7 @@ async function executeCode() {
             if (timeoutId) clearTimeout(timeoutId);
             killLevel();
             if (gameWorker) { gameWorker.terminate() }
+            btn.style.backgroundColor = "#4c4e4cff";
             btn.innerHTML = `<img src="assets/icons/play.svg"> Interrompendo...`;
             btn.disabled = true;
             await new Promise(resolve => setTimeout(resolve, 2000));
@@ -335,6 +338,8 @@ async function executeCode() {
             vPlayer.gy = player.gy;
             vPlayer.dir = player.dir;
             isRunning = true;
+            executionStartTime = performance.now();
+            lastExecutionDuration = null;
             const userCode = monacoEditorInstance.getValue();
             try {
                 if (gameWorker) gameWorker.terminate();
@@ -349,7 +354,7 @@ async function executeCode() {
                         if (settings.showErrors) dropdown(`
                     <h1 style="color: red">Security Error</h1>
                     <p>Ocorreu um erro na execução do seu script JS:</p>
-                    <p>Seu código foi interrompido porque demorou mais de 3 segundos para responder. Cuidado com loops infinitos!</p>
+                    <p>Seu código foi interrompido porque demorou mais de 3 segundos para responder. Cuidado com loops infinitos!<br>Note que isso também pode ser um bug ou uma falha do jogo, caso isso aconteça, tente recarregar a oágina ou tentar novamente.</p>
                 `);
                         executingCode = false;
                         btn.style.cursor = "pointer";
@@ -417,7 +422,7 @@ async function executeCode() {
                 };
                 gameWorker.postMessage({ jsCode: userCode, sab: sab });
             } catch (err) {
-                if (err === "ReferenceError: SharedArrayBuffer is not defined" && settings.showErrors) { await dropdown("Error, the user are executing the code in file context, use localhost or a website for the browser to allow the execution.") }
+                if (err.includes("SharedArrayBuffer") && settings.showErrors) { await dropdown("<h1>Security Error</h1><p>the user are executing the code in file context, use localhost or a website for the browser to allow the execution. or go to the <a href=\"https://maze-js.onrender.com/game/play.html\">official game</a>.</p>") }
                 else { alert(err) };
                 executingCode = false;
                 btn.style.cursor = "pointer";
