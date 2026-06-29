@@ -342,7 +342,7 @@ async function executeCode() {
                 const sab = new SharedArrayBuffer(1024);
                 const ia = new Int32Array(sab);
                 ia[0] = 0;
-                gameWorker = new Worker('./assets/scripts/worker.js');
+                gameWorker = new Worker('assets/scripts/worker.js');
                 timeoutId = setTimeout(() => {
                     if (gameWorker && !settings.infiniteLoopAllowed) {
                         gameWorker.terminate();
@@ -424,7 +424,9 @@ async function executeCode() {
                 };
                 gameWorker.postMessage({ jsCode: userCode, sab: sab });
             } catch (err) {
-                if (err === "ReferenceError: SharedArrayBuffer is not defined" && settings.showErrors) { await dropdown("Error, the user are executing the code in file context, use localhost or a website for the browser to allow the execution.") }; executingCode = false;
+                if (err === "ReferenceError: SharedArrayBuffer is not defined" && settings.showErrors) { await dropdown("Error, the user are executing the code in file context, use localhost or a website for the browser to allow the execution.") }
+                else { alert(err) };
+                executingCode = false;
                 btn.style.backgroundColor = "#4CAF50";
                 btn.innerHTML = `<img src="assets/icons/play.svg"> Rodar Solução`;
                 btn.style.cursor = "pointer";
