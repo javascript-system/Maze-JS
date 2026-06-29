@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="assets/icons/player.png">
     <title>Maze.js -game</title>
-    <link rel="stylesheet" href="assets/scripts/game.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-vsc-dark-plus.min.css">
+    <link rel="stylesheet" href="assets/scripts/game.css" crossorigin="anonymous"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-vsc-dark-plus.min.css" crossorigin="anonymous"/>
 </head>
 
 <body>
@@ -134,6 +134,7 @@
                         <select id="cfg-output-target" class="settings-select">
                             <option value="javascript">JavaScript</option>
                             <option value="python">Python</option>
+                            <option value="cpp">C++</option>
                         </select>
                     </div>
 
@@ -198,13 +199,14 @@
     <input type="file" id="levelInput" accept=".json" style="display: none;">
     <input type="file" id="musicInput" accept=".mp3" style="display: none;">
 
-    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
-    <script src="https://unpkg.com/blockly/msg/pt-br.js"></script>
-    <script src="https://unpkg.com/blockly/javascript_compressed.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://unpkg.com/blockly/blockly.min.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/blockly/msg/pt-br.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/blockly/javascript_compressed.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js" crossorigin="anonymous"></script>
 
     <script src="assets/scripts/content.js"></script>
     <script src="assets/scripts/levels.js"></script>
