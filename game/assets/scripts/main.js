@@ -63,6 +63,8 @@ window.dropdown = function (htmlContent) {
 };
 
 window.onWinGame = async () => {
+    const endTime = performance.now();
+    lastExecutionDuration = ((endTime - executionStartTime) / 1000).toFixed(2);
     const win = new Audio('assets/audios/win.mp3');
     win.volume = (settings.volumeMaster / 100) * (settings.volumeEffects / 100);
     win.play();
@@ -71,34 +73,61 @@ window.onWinGame = async () => {
     if (gameWorker) { gameWorker.terminate() };
     let displayCode = "";
     const langToDisplay = settings.outputTarget;
-
     if (currentMode === "blockly") {
-        try {
-            if (typeof javascript !== 'undefined' && typeof workspace !== 'undefined' && workspace) {
-                let rawCode = javascript.javascriptGenerator.workspaceToCode(workspace);
-                displayCode = String(rawCode.trim())
-                    .replace(/let loopLimit = 0;|\n\s*loopLimit\+\+ < 500/g, "")
-                    .replace(/advance\(\);/g, "advance(); //↑")
-                    .replace(/rotate\(90\);/g, "rotate_right(); //↻")
-                    .replace(/rotate\(180\);/g, "rotate_halfTurn(); //↻↻")
-                    .replace(/rotate\(-90\);/g, "rotate_left(); //↺");
-            } else {
-                displayCode = "// Código salvo com sucesso nos blocos.";
-            }
-        } catch (e) {
-            console.warn("Gerador do Blockly ocupado, pulando leitura visual:", e);
-            displayCode = "// Desafio concluído com blocos!";
+        let rawCode = javascript.javascriptGenerator.workspaceToCode(workspace);
+        rawCode = rawCode.replace(/let loopLimit = 0;|\s*loopLimit\+\+ < 500 &&\s*|\s*&& loopLimit\+\+ < 500/g, "");
+        if (langToDisplay === "python") {
+            let py = "import mazeJS\n\n";
+            let processed = rawCode
+                .replace(/advance\(\);/g, "mazeJS.advance()")
+                .replace(/rotate\(90\);/g, "mazeJS.rotate_right()")
+                .replace(/rotate\(-90\);/g, "mazeJS.rotate_left()")
+                .replace(/rotate\(180\);/g, "mazeJS.rotate_halfTurn()")
+                .replace(/vCheckPath\('([^']+)'\)/g, "mazeJS.path_is_clear('$1')")
+                .replace(/!vCheckEnd\(\)/g, "mazeJS.did_not_reach_the_end()");
+            processed = processed.replace(/while\s*\((.*?)\)\s*\{/g, "while $1:");
+            processed = processed.replace(/for\s*\(let\s+\w+\s*=\s*0;\s*\w+\s*<\s*(\d+);\s*\w+\+\+\)\s*\{/g, "for i in range($1):");
+            processed = processed.replace(/if\s*\((.*?)\)\s*\{/g, "if $1:");
+            processed = processed.replace(/\}/g, "").replace(/;/g, "");
+            py += processed.trim();
+            displayCode = py;
+        } else if (langToDisplay === "cpp") {
+            let cpp = "#include &lt;mazeJS&gt;\n\nint main() {\n";
+            let processed = rawCode
+                .replace(/advance\(\);/g, "advance();")
+                .replace(/rotate\(90\);/g, "rotate_right();")
+                .replace(/rotate\(-90\);/g, "rotate_left();")
+                .replace(/rotate\(180\);/g, "rotate_halfTurn();")
+                .replace(/vCheckPath\('([^']+)'\)/g, 'path_is_clear("$1")')
+                .replace(/!vCheckEnd\(\)/g, "did_not_reach_the_end()");
+            processed = processed.replace(/while\s*\(!vCheckEnd\(\)\)/g, "while (did_not_reach_the_end())");
+            processed = processed.replace(/for\s*\(let\s+(\w+)/g, "for (int $1");
+            let lines = processed.trim().split('\n').map(line => "    " + line).join('\n');
+            cpp += lines + "\n    return 0;\n}";
+            displayCode = cpp;
+        } else {
+            displayCode = rawCode.trim()
+                .replace(/advance\(\);/g, "advance();")
+                .replace(/rotate\(90\);/g, "rotate_right();")
+                .replace(/rotate\(-90\);/g, "rotate_left();")
+                .replace(/rotate\(180\);/g, "rotate_halfTurn();")
+                .replace(/vCheckPath\('([^']+)'\)/g, "path_is_clear('$1')")
+                .replace(/while\s*\(!vCheckEnd\(\)\)/g, "while (did_not_reach_the_end())");
         }
+        const langNames = { javascript: "JavaScript", python: "Python", cpp: "C++" };
+        const currentLangName = langNames[langToDisplay] || "language";
 
         await dropdown(`
             <h1>Parabéns! Nível ${currentLevelIndex + 1} Concluído!</h1>
-            <p>Você conseguiu passar de nível usando a programação em blocos!</p>
-            <code>${displayCode || "// Sucesso!"}</code>
+            <p>Veja como ficou a sua lógica em ${displayCode.split(/\r?\n/).length} linhas de ${currentLangName}:</p>
+            <pre><code class="language-${langToDisplay}">${displayCode}</code></pre>
         `);
     } else {
         await dropdown(`
             <h1>Parabéns! Nível ${currentLevelIndex + 1} Concluído!</h1>
-            <p>Você conseguiu passar de nível com ${langToDisplay === "javascript" ? "JavaScript" : "Python"}!</p>
+            <p>Você conseguiu passar de nível usando JavaScript!</p>
+            <p>Você usou ${monacoEditorInstance.getValue().split(/\r?\n/).length} linhas de código.</p>
+            <p>O jogador demorou ${lastExecutionDuration} segundos para completar o nível.</p>
         `);
     }
 
@@ -110,7 +139,7 @@ window.onWinGame = async () => {
     } else {
         await dropdown(`
             <h1>🏆 VOCÊ ZEROU O MAZEJS!</h1>
-            <p>Parabéns! Você completou todos os desafios! O jogo será reiniciado.</p>
+            <p>Parabéns! Você completou todos os desafios! Sabemos que esse final não foi o melhor de todos, mas agradeçemos a ajuda que você nos deu apenas jogando o jogo.<br><a href="https://maze-js.onrender.com/pages/credits/index.html">Créditos</a><br>O jogo será reiniciado ao usar OK.</p>
         `);
         location.reload();
     }
