@@ -95,7 +95,7 @@ window.vCheckPath = (direction) => {
     if (nx < 0 || nx >= levelWidth || ny < 0 || ny >= levelHeight) return false;
     let tile = grid[ny * levelWidth + nx];
     let type = (typeof tile === 'object') ? tile.special : tile;
-    return "P.EBSID".includes(type);
+    return "P.EBSI".includes(type);
 };
 
 
