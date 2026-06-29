@@ -325,9 +325,9 @@ async function executeCode() {
             await new Promise(resolve => setTimeout(resolve, 2000));
         }
         executingCode = true;
-        btn.style.backgroundColor = "#4b4a4aff";
-        btn.innerHTML = `<img src="assets/icons/play.svg"> Executando...`;
         btn.style.cursor = "wait";
+        btn.style.backgroundColor = "#4CAF50";
+        btn.innerHTML = `<img src="assets/icons/play.svg"> Rodar Solução`;
         btn.disabled = false;
         killLevel();
         setTimeout(async () => {
@@ -353,8 +353,6 @@ async function executeCode() {
                     <p>Seu código foi interrompido porque demorou mais de 3 segundos para responder. Cuidado com loops infinitos!</p>
                 `);
                         executingCode = false;
-                        btn.style.backgroundColor = "#4CAF50";
-                        btn.innerHTML = `<img src="assets/icons/play.svg"> Rodar Solução`;
                         btn.style.cursor = "pointer";
                         killLevel();
                     }
@@ -370,8 +368,6 @@ async function executeCode() {
                                 gameWorker = null;
                                 if (settings.showErrors) dropdown(`<h1 style="color: red">Security Error</h1><p>Ocorreu um erro na execução do seu script JS:</p><p>Seu código foi interrompido porque demorou mais de 3 segundos para responder. Cuidado com loops infinitos!</p>`);
                                 executingCode = false;
-                                btn.style.backgroundColor = "#4CAF50";
-                                btn.innerHTML = `<img src="assets/icons/play.svg"> Rodar Solução`;
                                 btn.style.cursor = "pointer";
                                 killLevel();
                             }
@@ -417,8 +413,6 @@ async function executeCode() {
                     `);
                         }
                         executingCode = false;
-                        btn.style.backgroundColor = "#4CAF50";
-                        btn.innerHTML = `<img src="assets/icons/play.svg"> Rodar Solução`;
                         btn.style.cursor = "pointer";
                     }
                 };
@@ -427,8 +421,6 @@ async function executeCode() {
                 if (err === "ReferenceError: SharedArrayBuffer is not defined" && settings.showErrors) { await dropdown("Error, the user are executing the code in file context, use localhost or a website for the browser to allow the execution.") }
                 else { alert(err) };
                 executingCode = false;
-                btn.style.backgroundColor = "#4CAF50";
-                btn.innerHTML = `<img src="assets/icons/play.svg"> Rodar Solução`;
                 btn.style.cursor = "pointer";
                 killLevel();
             }
