@@ -329,7 +329,7 @@ async function executeCode() {
                         if (settings.showErrors) await dropdown(`
                     <h1 style="color: red">Security Error</h1>
                     <p>Ocorreu um erro na execução do seu script JS:</p>
-                    <p>Seu código foi interrompido porque demorou mais de 3 segundos para responder. Cuidado com loops infinitos!<br>Note que isso também pode ser um bug ou uma falha do jogo, caso isso aconteça, tente recarregar a oágina ou tentar novamente.</p>
+                    <p>Seu código foi interrompido porque demorou mais de 3 segundos para responder. Cuidado com loops infinitos!<br>Note que isso também pode ser um bug ou uma falha do jogo, caso isso aconteça, tente recarregar a página ou tentar novamente.<br>Se o seu código mesmo válido não faz nada, pode ser uma restrição do seu aparelho ou navegador.</p>
                 `);
                         executingCode = false;
                         killLevel();
